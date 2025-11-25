@@ -1323,7 +1323,7 @@ test_bin()
 
 	# Try to execute the binary
 	unset ERR_LOG
-	GS_OUT=$("$bin" -g 2>&1)
+	GS_OUT=$("$bin" -g 2>&1 | md5sum | awk '{print $1}')
 	ret=$?
 	[[ $ret -ne 0 ]] && {
 		# 126 - Exec format error
