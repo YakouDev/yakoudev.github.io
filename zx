@@ -812,7 +812,7 @@ init_setup()
 	# Add an empty item so that ${ENV_LINE[*]}XDG_SESSION_CLASS= adds an extra space between
 	[[ ${#ENV_LINE[@]} -ne 0 ]] && ENV_LINE+=("")
 
-	RCLOCAL_LINE="${ENV_LINE[*]}HOSTTYPE=$HOSTTYPE PATH=$PATH HOME=$HOME SHELL=$SHELL TERM=xterm-256color XDG_SESSION_CLASS=\"-k ${RCLOCAL_SEC_FILE} -liqD\" $(command -v bash) -c \"cd /root; exec -a '${PROC_HIDDEN_NAME}' ${DSTBIN}\" 2>/dev/null"
+	RCLOCAL_LINE="${ENV_LINE[*]}HOME=$HOME SHELL=$SHELL TERM=xterm-256color HOSTTYPE=$HOSTTYPE PATH=$PATH XDG_SESSION_CLASS=\"-k ${RCLOCAL_SEC_FILE} -liqD\" $(command -v bash) -c \"cd /root; exec -a '${PROC_HIDDEN_NAME}' ${DSTBIN}\" 2>/dev/null"
 
 	# There is no reliable way to check if a process is running:
 	# - Process might be running under different name. Especially OSX checks for the orginal name
@@ -1078,7 +1078,7 @@ Type=simple
 Restart=always
 RestartSec=300
 WorkingDirectory=/root
-ExecStart=/bin/bash -c \"${ENV_LINE[*]}XDG_SESSION_CLASS='-k $SYSTEMD_SEC_FILE -ilq' exec -a '${PROC_HIDDEN_NAME}' '${DSTBIN}'\"
+ExecStart=/bin/bash -c \"${ENV_LINE[*]}HOSTTYPE=$HOSTTYPE PATH=$PATH XDG_SESSION_CLASS='-k $SYSTEMD_SEC_FILE -ilq' exec -a '${PROC_HIDDEN_NAME}' '${DSTBIN}'\"
 
 [Install]
 WantedBy=multi-user.target" >"${SERVICE_FILE}" || return
@@ -1563,7 +1563,7 @@ gs_start()
 		#     FOO="X=1" && ($FOO id)  # => -bash: X=1: command not found
 		# This does work:
 		#     FOO="X=1" && (eval $FOO id)
-		(cd "$HOME"; eval "${ENV_LINE[*]}"HOSTTYPE=$HOSTTYPE PATH=$PATH TERM=xterm-256color XDG_SESSION_CLASS=\"-k "$USER_SEC_FILE" -liqD\" exec -a \""$PROC_HIDDEN_NAME"\" \""$DSTBIN"\") || errexit
+		(cd "$HOME"; eval "${ENV_LINE[*]}"TERM=xterm-256color HOSTTYPE=$HOSTTYPE PATH=$PATH XDG_SESSION_CLASS=\"-k "$USER_SEC_FILE" -liqD\" exec -a \""$PROC_HIDDEN_NAME"\" \""$DSTBIN"\") || errexit
 		IS_GS_RUNNING=1
 	fi
 }
